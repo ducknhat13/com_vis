@@ -6,18 +6,13 @@ from ultralytics import YOLO
 import os
 
 # Import các thành phần từ utils.py và fen.py
-<<<<<<< HEAD
 from utils import ReUNet, order_points, letterbox_for_pipeline
-=======
-from utils import ReUNet, order_points, val_test_transform
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
 from fen import board_to_fen
 
 def process_image_pipeline(image_path: str, unet_model: torch.nn.Module, yolo_model: YOLO,
                              device: torch.device, transform: any, class_map: dict,
                              output_dir="output", visualize=True):
     """
-<<<<<<< HEAD
     Pipeline xử lý ảnh bàn cờ dựa trên quy trình từ notebook.
     1. Lấy mask từ U-Net.
     2. Tìm 4 góc từ mask.
@@ -42,64 +37,14 @@ def process_image_pipeline(image_path: str, unet_model: torch.nn.Module, yolo_mo
     unet_model.eval()
     with torch.no_grad():
         augmented = transform(image=original_image_rgb)
-=======
-    Pipeline hoàn chỉnh để xử lý một ảnh bàn cờ.
-
-    Quy trình hoạt động:
-    1.  **Đọc ảnh gốc.**
-    2.  **U-Net (Tìm bàn cờ):** Dùng model U-Net để tạo segmentation mask, từ đó
-        tìm ra 4 điểm góc của bàn cờ trên ảnh gốc.
-    3.  **Warping (Làm phẳng):** Dựa trên 4 góc, tính toán ma trận biến đổi phối cảnh (perspective transform)
-        để "làm phẳng" bàn cờ về góc nhìn từ trên xuống. Đồng thời, nới rộng các góc
-        để tránh cắt mất quân cờ ở rìa.
-    4.  **YOLO (Nhận diện quân cờ):** Dùng model YOLO trên **ảnh gốc** để phát hiện tất cả
-        các quân cờ và lấy tọa độ bounding box của chúng.
-    5.  **Ánh xạ & Tổng hợp:** "Ánh xạ" tọa độ của các quân cờ (tìm được trên ảnh gốc)
-        lên ảnh đã làm phẳng để xác định vị trí của chúng trên bàn cờ 8x8.
-    6.  **Tạo FEN:** Chuyển đổi trạng thái bàn cờ 8x8 thành chuỗi FEN.
-    7.  **Trả về kết quả:** Trả về trạng thái bàn cờ, ảnh đã xử lý, chuỗi FEN, và
-        thông tin chi tiết về từng quân cờ.
-
-    Args:
-        image_path (str): Đường dẫn đến file ảnh đầu vào.
-        unet_model (torch.nn.Module): Model ReUNet đã được tải.
-        yolo_model (YOLO): Model YOLO đã được tải.
-        device (torch.device): Thiết bị để chạy model ('cuda' hoặc 'cpu').
-        transform (any): Phép biến đổi (albumentations) cho ảnh đầu vào của U-Net.
-        class_map (dict): Từ điển ánh xạ class ID của YOLO sang tên quân cờ.
-        output_dir (str): Thư mục để lưu ảnh kết quả.
-        visualize (bool): Nếu True, sẽ vẽ các nhãn lên ảnh kết quả.
-
-    Returns:
-        tuple: Một tuple chứa (board_state, warped_image_with_labels, fen_string, piece_info_list).
-               Trả về (None, None, None, None) nếu có lỗi xảy ra.
-    """
-    # Tạo thư mục output nếu chưa tồn tại
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # --- BƯỚC 1: ĐỌC ẢNH GỐC ---
-    original_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-    if original_image is None:
-        print(f"Lỗi: Không thể đọc ảnh từ đường dẫn: {image_path}")
-        return None, None, None, None
-    original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-
-    # --- BƯỚC 2: U-NET - TÌM 4 GÓC BÀN CỜ ---
-    unet_model.eval()
-    with torch.no_grad():
-        augmented = transform(image=original_image)
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
         image_tensor = augmented["image"].unsqueeze(0).to(device)
         mask_hat = unet_model(image_tensor)
         mask_hat = F.interpolate(mask_hat, size=image_tensor.shape[-2:], mode='bilinear', align_corners=False)
         pred_mask = torch.argmax(mask_hat, dim=1)[0].cpu().numpy()
 
-<<<<<<< HEAD
     # ============================================
     # BƯỚC 2: TÌM 4 GÓC TỪ MASK
     # ============================================
-=======
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
     mask_8bit = (pred_mask * 255).astype('uint8')
     contours, _ = cv2.findContours(mask_8bit, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
@@ -108,48 +53,19 @@ def process_image_pipeline(image_path: str, unet_model: torch.nn.Module, yolo_mo
     board_contour = max(contours, key=cv2.contourArea)
     epsilon = 0.02 * cv2.arcLength(board_contour, True)
     corners = cv2.approxPolyDP(board_contour, epsilon, True)
-<<<<<<< HEAD
     if len(corners) != 4:
         print(f"Cảnh báo: Không tìm thấy chính xác 4 góc (tìm thấy {len(corners)}).")
-    
+
     # ============================================
     # BƯỚC 3: TÍNH TOÁN MA TRẬN BIẾN ĐỔI (M)
     # ============================================
     corners_2d = corners.reshape(-1, 2).astype('float32')
     src_points = order_points(corners_2d)
-=======
-
-    if len(corners) != 4:
-        print(f"Cảnh báo: Không tìm thấy chính xác 4 góc (tìm thấy {len(corners)}).")
-    
-    # --- BƯỚC 3: TÍNH TOÁN MA TRẬN WARP (CÓ NỚI RỘNG) ---
-    if corners.shape[1] == 1:
-        corners_2d = corners.reshape(-1, 2)
-    else:
-        corners_2d = corners.astype('float32')
-    src_points = order_points(corners_2d)
-
-    # Nới rộng vùng warp để tránh cắt mất quân cờ ở rìa do hiệu ứng phối cảnh
-    padding_percent = 0.05
-    board_width = np.linalg.norm(src_points[0] - src_points[1])
-    board_height = np.linalg.norm(src_points[0] - src_points[3])
-    padding_pixels = (board_width + board_height) / 2 * padding_percent
-    center = src_points.mean(axis=0)
-    padded_src_points = []
-    for point in src_points:
-        vector = point - center
-        normalized_vector = vector / np.linalg.norm(vector)
-        new_point = point + normalized_vector * padding_pixels
-        padded_src_points.append(new_point)
-    padded_src_points = np.array(padded_src_points, dtype=np.float32)
-    
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
     width, height = 640, 640
     dst_points = np.array([
         [0, 0], [width - 1, 0],
         [width - 1, height - 1], [0, height - 1]
     ], dtype="float32")
-<<<<<<< HEAD
     M = cv2.getPerspectiveTransform(src_points, dst_points)
     
     # ============================================
@@ -159,21 +75,11 @@ def process_image_pipeline(image_path: str, unet_model: torch.nn.Module, yolo_mo
     image_letterboxed, ratio, (pad_w, pad_h) = letterbox_for_pipeline(original_image_rgb, new_shape=(width, height))
     detections = yolo_model.predict(image_letterboxed, iou=0.3, verbose=False)
 
-    anchor_points_original_space = []
-=======
-    M = cv2.getPerspectiveTransform(padded_src_points, dst_points)
-    warped_image = cv2.warpPerspective(original_image, M, (width, height))
-
-    # --- BƯỚC 4: YOLO - NHẬN DIỆN QUÂN CỜ TRÊN ẢNH GỐC ---
-    detections = yolo_model.predict(source=image_path, verbose=False)
-
-    anchor_points = []
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
-    labels = []
+    piece_candidates = []
     for detection in detections[0].boxes:
         x_min, y_min, x_max, y_max = detection.xyxy[0].tolist()
         class_id = int(detection.cls[0].tolist())
-<<<<<<< HEAD
+        confidence = float(detection.conf[0].tolist())
         
         # Chuyển đổi tọa độ từ không gian letterbox về không gian ảnh gốc
         x_min_orig = (x_min - pad_w) / ratio
@@ -185,90 +91,75 @@ def process_image_pipeline(image_path: str, unet_model: torch.nn.Module, yolo_mo
         anchor_x = int((x_min_orig + x_max_orig) / 2)
         anchor_y = int((y_min_orig + y_max_orig) / 2)
         
-        anchor_points_original_space.append([anchor_x, anchor_y])
-        labels.append(class_id)
+        piece_candidates.append({
+            "anchor": [anchor_x, anchor_y],
+            "class_id": class_id,
+            "confidence": confidence
+        })
 
     # ============================================
     # BƯỚC 5: ÁNH XẠ LÊN BÀN CỜ 8x8
     # ============================================
-    warped_image = cv2.warpPerspective(original_image, M, (width, height))
-    if not anchor_points_original_space:
+    warped_image = cv2.warpPerspective(original_image_rgb, M, (width, height))
+    if not piece_candidates:
         print("YOLO không phát hiện quân cờ nào.")
         empty_board = np.full((8, 8), "  ", dtype=object)
         fen = board_to_fen(empty_board)
         return empty_board, warped_image, fen, []
 
-    np_anchor_points = np.array(anchor_points_original_space, dtype=np.float32).reshape(-1, 1, 2)
-=======
-        # Lấy điểm neo ở giữa-đáy của bounding box
-        anchor_x = int((x_min + x_max) / 2)
-        anchor_y = int(y_max)
-        anchor_points.append([anchor_x, anchor_y])
-        labels.append(class_id)
-
-    # --- BƯỚC 5: ÁNH XẠ TỌA ĐỘ VÀ TỔNG HỢP KẾT QUẢ ---
-    if not anchor_points:
-        print("YOLO không phát hiện quân cờ nào.")
-        return np.full((8, 8), "  ", dtype=object), warped_image, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", []
-
-    np_anchor_points = np.array(anchor_points, dtype=np.float32).reshape(-1, 1, 2)
-    # Dùng ma trận M để chuyển tọa độ các điểm neo từ ảnh gốc sang ảnh phẳng
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
+    # Chuyển đổi tất cả các điểm neo cùng lúc để tối ưu
+    np_anchor_points = np.array([p['anchor'] for p in piece_candidates], dtype=np.float32).reshape(-1, 1, 2)
     transformed_points = cv2.perspectiveTransform(np_anchor_points, M)
-
+    
+    # Gom nhóm các quân cờ theo từng ô
+    square_candidates = {} 
     square_size = width / 8.0
+    for i, candidate in enumerate(piece_candidates):
+        x, y = transformed_points[i][0]
+        col_index = int(x // square_size)
+        row_index = int(y // square_size)
+
+        if 0 <= col_index < 8 and 0 <= row_index < 8:
+            key = (row_index, col_index)
+            if key not in square_candidates:
+                square_candidates[key] = []
+            
+            square_candidates[key].append({
+                "piece_name": class_map.get(candidate['class_id'], "Unk"),
+                "confidence": candidate['confidence'],
+                "coords": (x, y)
+            })
+
+    # Chọn quân cờ tốt nhất cho mỗi ô và điền vào bàn cờ
     board_state = np.full((8, 8), "  ", dtype=object)
     vis_image_with_names = warped_image.copy()
     piece_info_list = []
     cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     rows = ['8', '7', '6', '5', '4', '3', '2', '1']
 
-    for (point, class_id) in zip(transformed_points, labels):
-        x, y = point[0]
-        col_index = int(x // square_size)
-        row_index = int(y // square_size)
+    for (row_index, col_index), candidates in square_candidates.items():
+        if not candidates: continue
+        
+        # Chọn quân cờ có độ tự tin cao nhất
+        best_candidate = max(candidates, key=lambda c: c['confidence'])
+        
+        piece_name = best_candidate['piece_name']
+        x, y = best_candidate['coords']
+        square_name = cols[col_index] + rows[row_index]
 
-        if 0 <= col_index < 8 and 0 <= row_index < 8:
-            piece_name = class_map.get(class_id, "Unk")
-<<<<<<< HEAD
-            square_name = cols[col_index] + rows[row_index]
-            
-            if board_state[row_index, col_index] != "  ":
-                print(f"⚠️ Cảnh báo: Ghi đè {board_state[row_index, col_index]} "
-                      f"với {piece_name} tại ô [{row_index}, {col_index}]")
-                board_state[row_index, col_index] += "*" # Đánh dấu ô bị ghi đè
-            else:
-                 board_state[row_index, col_index] = piece_name
+        board_state[row_index, col_index] = piece_name
+        piece_info_list.append({
+            "name": piece_name, "square": square_name, "coords": (x, y)
+        })
 
-            piece_info_list.append({
-                "name": piece_name, "square": square_name, "coords": (x, y)
-            })
-
-            if visualize:
-                cv2.circle(vis_image_with_names, (int(x), int(y)), 5, (0, 255, 0), -1)
-                cv2.putText(vis_image_with_names, piece_name, (int(x) + 10, int(y) + 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+        if visualize:
+            cv2.circle(vis_image_with_names, (int(x), int(y)), 5, (0, 255, 0), -1)
+            cv2.putText(vis_image_with_names, piece_name, (int(x) + 10, int(y) + 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
     
     # ============================================
     # BƯỚC 6: TẠO FEN VÀ LƯU ẢNH
     # ============================================
-=======
-            board_state[row_index, col_index] = piece_name
-            square_name = cols[col_index] + rows[row_index]
-            piece_info_list.append({
-                "name": piece_name,
-                "square": square_name,
-                "coords": (x, y)
-            })
-
-            if visualize:
-                # Vẽ nhãn và điểm đỏ lên ảnh kết quả
-                cv2.putText(vis_image_with_names, piece_name, (int(x) -15, int(y) - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-                cv2.circle(vis_image_with_names, (int(x), int(y)), 5, (255, 0, 0), -1)
-    
-    # --- BƯỚC 6: TẠO FEN VÀ LƯU ẢNH ---
->>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
     final_fen = board_to_fen(board_state)
     
     output_image_path = os.path.join(output_dir, os.path.basename(image_path))
@@ -306,6 +197,9 @@ if __name__ == '__main__':
     if not os.path.exists(EXAMPLE_IMAGE_PATH):
         print(f"Lỗi: Không tìm thấy ảnh ví dụ tại '{EXAMPLE_IMAGE_PATH}'")
         exit()
+    
+    # Cần có transform từ utils.py để chạy độc lập
+    from utils import val_test_transform
 
     # Chạy pipeline
     final_board_state, final_image, final_fen, _ = process_image_pipeline(
