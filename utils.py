@@ -112,11 +112,11 @@ def order_points(pts: np.ndarray) -> np.ndarray:
     # Điểm dưới-phải có tổng (x+y) lớn nhất
     rect[2] = pts[np.argmax(s)]
 
-    # Điểm trên-phải có hiệu (x-y) lớn nhất
+    # Điểm trên-phải có hiệu (y-x) nhỏ nhất
     diff = np.diff(pts, axis=1)
-    rect[1] = pts[np.argmax(diff)]
-    # Điểm dưới-trái có hiệu (x-y) nhỏ nhất
-    rect[3] = pts[np.argmin(diff)]
+    rect[1] = pts[np.argmin(diff)]
+    # Điểm dưới-trái có hiệu (y-x) lớn nhất
+    rect[3] = pts[np.argmax(diff)]
 
     return rect
 
