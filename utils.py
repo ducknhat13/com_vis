@@ -120,6 +120,47 @@ def order_points(pts: np.ndarray) -> np.ndarray:
 
     return rect
 
+def letterbox_for_pipeline(image, target_size=640):
+    """
+    Tạo ảnh letterbox giống với cách YOLO xử lý.
+    Hàm này thay đổi kích thước ảnh để vừa vào một khung hình vuông
+    (target_size x target_size) và thêm các dải đệm (padding) màu xám
+    để giữ nguyên tỷ lệ khung hình gốc, tránh làm méo ảnh.
+
+    Returns:
+        letterboxed (np.ndarray): Ảnh đã được thêm letterbox (target_size, target_size, 3).
+        scale (float): Tỷ lệ co giãn đã được áp dụng cho ảnh.
+        pad_w (int): Kích thước của dải đệm được thêm vào bên trái.
+        pad_h (int): Kích thước của dải đệm được thêm vào bên trên.
+    """
+    h, w = image.shape[:2]
+
+    # Tính toán tỷ lệ co giãn (scale) để cạnh dài nhất vừa với target_size.
+    scale = min(target_size / w, target_size / h)
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+
+    # Thay đổi kích thước ảnh theo tỷ lệ đã tính.
+    resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+
+    # Tính toán kích thước padding cần thêm vào mỗi bên.
+    pad_w = (target_size - new_w) // 2
+    pad_h = (target_size - new_h) // 2
+    pad_right = target_size - new_w - pad_w
+    pad_bottom = target_size - new_h - pad_h
+
+    # Dùng cv2.copyMakeBorder để thêm các dải đệm màu xám (114, 114, 114)
+    # giống với màu mặc định của YOLO.
+    letterboxed = cv2.copyMakeBorder(
+        resized,
+        pad_h, pad_bottom,
+        pad_w, pad_right,
+        cv2.BORDER_CONSTANT,
+        value=(114, 114, 114)
+    )
+
+    return letterboxed, scale, pad_w, pad_h
+
 # --- CÁC PHÉP BIẾN ĐỔI ẢNH (TRANSFORMS) ---
 
 size = 640
@@ -129,46 +170,3 @@ val_test_transform = A.Compose([
     A.Normalize(mean=[0.5]*3, std=[0.5]*3),
     ToTensorV2()
 ], is_check_shapes=False)
-# <<<<<<< HEAD
-
-
-def letterbox_for_pipeline(image, new_shape=(640, 640), color=(114, 114, 114)):
-    """
-    Thay đổi kích thước và đệm ảnh để đạt được hình dạng mong muốn mà không làm thay đổi tỷ lệ khung hình.
-
-    Args:
-        image (np.ndarray): Ảnh đầu vào.
-        new_shape (tuple): Kích thước mong muốn (height, width).
-        color (tuple): Màu sắc cho vùng đệm.
-
-    Returns:
-        tuple: Một tuple chứa (ảnh đã đệm, tỷ lệ co giãn, (đệm_w, đệm_h)).
-    """
-    h, w, _ = image.shape
-    new_h, new_w = new_shape
-
-    # Tính toán tỷ lệ co giãn
-    ratio = min(new_h / h, new_w / w)
-    
-    # Kích thước mới
-    scaled_w, scaled_h = int(w * ratio), int(h * ratio)
-    
-    # Thay đổi kích thước
-    if h != scaled_h or w != scaled_w:
-        resized_image = cv2.resize(image, (scaled_w, scaled_h), interpolation=cv2.INTER_LINEAR)
-    else:
-        resized_image = image
-    
-    # Tạo ảnh đã đệm
-    padded_image = np.full((new_h, new_w, 3), color, dtype=np.uint8)
-    
-    # Tính toán lề đệm
-    pad_h = (new_h - scaled_h) // 2
-    pad_w = (new_w - scaled_w) // 2
-    
-    # Đặt ảnh đã thay đổi kích thước vào giữa
-    padded_image[pad_h:pad_h + scaled_h, pad_w:pad_w + scaled_w] = resized_image
-    
-    return padded_image, ratio, (pad_w, pad_h)
-# =======
-# >>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
