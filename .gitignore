@@ -1,0 +1,13 @@
+﻿.venv/
+venv/
+__pycache__/
+*.pyc
+*.log
+output/
+.ipynb_checkpoints/
+.DS_Store
+
+*.pt
+*.onnx
+*.pkl
+*.weights

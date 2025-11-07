@@ -1,0 +1,8 @@
+torch
+opencv-python
+numpy
+albumentations
+timm
+ultralytics
+customtkinter
+Pillow
