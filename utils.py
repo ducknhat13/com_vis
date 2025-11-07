@@ -129,6 +129,7 @@ val_test_transform = A.Compose([
     A.Normalize(mean=[0.5]*3, std=[0.5]*3),
     ToTensorV2()
 ], is_check_shapes=False)
+<<<<<<< HEAD
 
 
 def letterbox_for_pipeline(image, new_shape=(640, 640), color=(114, 114, 114)):
@@ -169,3 +170,5 @@ def letterbox_for_pipeline(image, new_shape=(640, 640), color=(114, 114, 114)):
     padded_image[pad_h:pad_h + scaled_h, pad_w:pad_w + scaled_w] = resized_image
     
     return padded_image, ratio, (pad_w, pad_h)
+=======
+>>>>>>> 53e24a74f082b3e0459c7a9c6953b6d0f527ea50
